@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -17,13 +18,14 @@ type Todo struct {
 
 func main() {
 	r := gin.Default()
+	p := fmt.Sprintf(":%s", os.Getenv("PORT"))
 
 	r.GET("/api/todos", getTodosHandler)
 	r.GET("/api/todos/:id", getTodoByID)
 	r.POST("/api/todos", postTodoHandler)
 	r.DELETE("/api/todos/:id", deleteTodoByID)
 
-	r.Run(":1234")
+	r.Run(p)
 }
 
 func getStudentHandler(c *gin.Context) {
