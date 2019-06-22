@@ -11,7 +11,7 @@ import (
 )
 
 type Todo struct {
-	ID     int
+	ID     int    `json:"id"`
 	Title  string `json:"title"`
 	Status string `json:"status"`
 }
@@ -26,14 +26,6 @@ func main() {
 	r.DELETE("/api/todos/:id", deleteTodoByID)
 
 	r.Run(p)
-}
-
-func getStudentHandler(c *gin.Context) {
-
-}
-
-func postStudentHandler(c *gin.Context) {
-
 }
 
 func getTodosHandler(c *gin.Context) {
