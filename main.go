@@ -78,13 +78,13 @@ func postTodoHandler(c *gin.Context) {
 
 	var todo Todo
 	c.BindJSON(&todo)
-	id, err := addTodo(db, todo.Title, todo.Status)
+	todo, err = addTodo(db, todo.Title, todo.Status)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(201, gin.H{"status": fmt.Sprintf("ID %d Added", id)})
+	c.JSON(201, todo)
 }
 
 func deleteTodoByID(c *gin.Context) {
@@ -101,10 +101,11 @@ func deleteTodoByID(c *gin.Context) {
 		return
 	}
 
-	if err := removeTodoByID(db, id); err != nil {
+	_, err = removeTodoByID(db, id)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(200, gin.H{"status": "Deleted"})
+	c.JSON(200, gin.H{"status": "success"})
 }

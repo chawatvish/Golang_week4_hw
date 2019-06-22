@@ -39,9 +39,9 @@ func queryTodoByID(db *sql.DB, id int) (Todo, error) {
 	if err != nil {
 		return Todo{}, err
 	}
-	rows := stmt.QueryRow(id)
 
 	var todo Todo
+	rows := stmt.QueryRow(id)
 	err = rows.Scan(&todo.ID, &todo.Title, &todo.Status)
 	if err != nil {
 		return Todo{}, err
@@ -50,18 +50,18 @@ func queryTodoByID(db *sql.DB, id int) (Todo, error) {
 	return todo, nil
 }
 
-func addTodo(db *sql.DB, title string, status string) (int, error) {
+func addTodo(db *sql.DB, title string, status string) (Todo, error) {
 	query := `
-	INSERT INTO todos (title, status) VALUES ($1, $2) RETURNING ID
+	INSERT INTO todos (title, status) VALUES ($1, $2) RETURNING ID, title, status
 	`
-	var id int
+	var todo Todo
 	row := db.QueryRow(query, title, status)
-	err := row.Scan(&id)
+	err := row.Scan(&todo.ID, &todo.Title, &todo.Status)
 	if err != nil {
-		return 0, err
+		return Todo{}, err
 	}
 
-	return id, nil
+	return todo, nil
 }
 
 func updateTodoStatus(db *sql.DB, id int, status string) error {
@@ -90,15 +90,18 @@ func updateTodoTitle(db *sql.DB, id int, title string) error {
 	return nil
 }
 
-func removeTodoByID(db *sql.DB, id int) error {
-	stmt, err := db.Prepare("DELETE FROM todos WHERE id=$1;")
+func removeTodoByID(db *sql.DB, id int) (Todo, error) {
+	stmt, err := db.Prepare("DELETE FROM todos WHERE id=$1 RETURNING ID, title, status;")
 	if err != nil {
-		return err
+		return Todo{}, err
 	}
 
-	if _, err := stmt.Exec(id); err != nil {
-		return err
+	var todo Todo
+	rows := stmt.QueryRow(id)
+	err = rows.Scan(&todo.ID, &todo.Title, &todo.Status)
+	if err != nil {
+		return Todo{}, err
 	}
 
-	return nil
+	return todo, nil
 }
