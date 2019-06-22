@@ -29,48 +29,82 @@ func main() {
 }
 
 func getTodosHandler(c *gin.Context) {
-	todos, err := queryTodos()
+	db, err := connect()
 	if err != nil {
+		db.Close()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
+	todos, err := queryTodos(db)
+	if err != nil {
+		db.Close()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	db.Close()
 	c.JSON(200, todos)
 }
 
 func getTodoByID(c *gin.Context) {
+	db, err := connect()
+	if err != nil {
+		db.Close()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
+		db.Close()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
-	todo, err := queryTodoByID(id)
+	todo, err := queryTodoByID(db, id)
 	if err != nil {
+		db.Close()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
+	db.Close()
 	c.JSON(200, todo)
 }
 
 func postTodoHandler(c *gin.Context) {
-	var todo Todo
-	c.BindJSON(&todo)
-	id, err := addTodo(todo.Title, todo.Status)
+	db, err := connect()
 	if err != nil {
+		db.Close()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
+	var todo Todo
+	c.BindJSON(&todo)
+	id, err := addTodo(db, todo.Title, todo.Status)
+	if err != nil {
+		db.Close()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	db.Close()
 	c.JSON(200, gin.H{"status": fmt.Sprintf("ID %d Added", id)})
 }
 
 func deleteTodoByID(c *gin.Context) {
+	db, err := connect()
+	if err != nil {
+		db.Close()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
+		db.Close()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
-	if err := removeTodoByID(id); err != nil {
+	if err := removeTodoByID(db, id); err != nil {
+		db.Close()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
+	db.Close()
 	c.JSON(200, gin.H{"status": "Deleted"})
 }

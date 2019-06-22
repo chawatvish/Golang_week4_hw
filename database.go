@@ -11,21 +11,13 @@ func connect() (*sql.DB, error) {
 	return sql.Open("postgres", os.Getenv("DATABASE_URL"))
 }
 
-func queryTodos() ([]Todo, error) {
-	db, err := connect()
-	if err != nil {
-		db.Close()
-		return nil, err
-	}
-
+func queryTodos(db *sql.DB) ([]Todo, error) {
 	stmt, err := db.Prepare("SELECT id, title, status FROM todos")
 	if err != nil {
-		db.Close()
 		return nil, err
 	}
 	rows, err := stmt.Query()
 	if err != nil {
-		db.Close()
 		return nil, err
 	}
 
@@ -34,7 +26,6 @@ func queryTodos() ([]Todo, error) {
 		var todo Todo
 		err := rows.Scan(&todo.ID, &todo.Title, &todo.Status)
 		if err != nil {
-			db.Close()
 			return nil, err
 		}
 		todos = append(todos, todo)
@@ -43,16 +34,9 @@ func queryTodos() ([]Todo, error) {
 	return todos, nil
 }
 
-func queryTodoByID(id int) (Todo, error) {
-	db, err := connect()
-	if err != nil {
-		db.Close()
-		return Todo{}, err
-	}
-
+func queryTodoByID(db *sql.DB, id int) (Todo, error) {
 	stmt, err := db.Prepare("SELECT id, title, status FROM todos WHERE id=$1;")
 	if err != nil {
-		db.Close()
 		return Todo{}, err
 	}
 	rows := stmt.QueryRow(id)
@@ -60,26 +44,19 @@ func queryTodoByID(id int) (Todo, error) {
 	var todo Todo
 	err = rows.Scan(&todo.ID, &todo.Title, &todo.Status)
 	if err != nil {
-		db.Close()
 		return Todo{}, err
 	}
 
 	return todo, nil
 }
 
-func addTodo(title string, status string) (int, error) {
-	db, err := connect()
-	if err != nil {
-		db.Close()
-		return 0, err
-	}
-
+func addTodo(db *sql.DB, title string, status string) (int, error) {
 	query := `
 	INSERT INTO todos (title, status) VALUES ($1, $2) RETURNING ID
 	`
 	var id int
 	row := db.QueryRow(query, title, status)
-	err = row.Scan(&id)
+	err := row.Scan(&id)
 	if err != nil {
 		return 0, err
 	}
@@ -87,63 +64,39 @@ func addTodo(title string, status string) (int, error) {
 	return id, nil
 }
 
-func updateTodoStatus(id int, status string) error {
-	db, err := connect()
-	if err != nil {
-		db.Close()
-		return err
-	}
-
+func updateTodoStatus(db *sql.DB, id int, status string) error {
 	stmt, err := db.Prepare("UPDATE todos SET status=$2 WHERE id=$1;")
 	if err != nil {
-		db.Close()
 		return err
 	}
 
 	if _, err := stmt.Exec(id, status); err != nil {
-		db.Close()
 		return err
 	}
 
 	return nil
 }
 
-func updateTodoTitle(id int, title string) error {
-	db, err := connect()
-	if err != nil {
-		db.Close()
-		return err
-	}
-
+func updateTodoTitle(db *sql.DB, id int, title string) error {
 	stmt, err := db.Prepare("UPDATE todos SET title=$2 WHERE id=$1;")
 	if err != nil {
-		db.Close()
 		return err
 	}
 
 	if _, err := stmt.Exec(id, title); err != nil {
-		db.Close()
 		return err
 	}
 
 	return nil
 }
 
-func removeTodoByID(id int) error {
-	db, err := connect()
-	if err != nil {
-		db.Close()
-		return err
-	}
-
+func removeTodoByID(db *sql.DB, id int) error {
 	stmt, err := db.Prepare("DELETE FROM todos WHERE id=$1;")
 	if err != nil {
-		db.Close()
 		return err
 	}
 
 	if _, err := stmt.Exec(id); err != nil {
-		db.Close()
 		return err
 	}
 
