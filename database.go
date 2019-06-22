@@ -50,16 +50,12 @@ func queryTodoByID(id int) (Todo, error) {
 		return Todo{}, err
 	}
 
-	stmt, err := db.Prepare("SELECT id, title, status FROM todos")
+	stmt, err := db.Prepare("SELECT id, title, status FROM todos WHERE id=$1;")
 	if err != nil {
 		db.Close()
 		return Todo{}, err
 	}
-	rows, err := stmt.Query()
-	if err != nil {
-		db.Close()
-		return Todo{}, err
-	}
+	rows := stmt.QueryRow(id)
 
 	var todo Todo
 	err = rows.Scan(&todo.ID, &todo.Title, &todo.Status)
@@ -71,24 +67,24 @@ func queryTodoByID(id int) (Todo, error) {
 	return todo, nil
 }
 
-func addTodo(title string, status string) (Todo, error) {
+func addTodo(title string, status string) (int, error) {
 	db, err := connect()
 	if err != nil {
 		db.Close()
-		return Todo{}, err
+		return 0, err
 	}
 
 	query := `
 	INSERT INTO todos (title, status) VALUES ($1, $2) RETURNING ID
 	`
-	var newTodo Todo
+	var id int
 	row := db.QueryRow(query, title, status)
-	err = row.Scan(&newTodo.ID, &newTodo.Title, &newTodo.Status)
+	err = row.Scan(&id)
 	if err != nil {
-		return Todo{}, err
+		return 0, err
 	}
 
-	return newTodo, nil
+	return id, nil
 }
 
 func updateTodoStatus(id int, status string) error {
@@ -126,6 +122,27 @@ func updateTodoTitle(id int, title string) error {
 	}
 
 	if _, err := stmt.Exec(id, title); err != nil {
+		db.Close()
+		return err
+	}
+
+	return nil
+}
+
+func removeTodoByID(id int) error {
+	db, err := connect()
+	if err != nil {
+		db.Close()
+		return err
+	}
+
+	stmt, err := db.Prepare("DELETE FROM todos WHERE id=$1;")
+	if err != nil {
+		db.Close()
+		return err
+	}
+
+	if _, err := stmt.Exec(id); err != nil {
 		db.Close()
 		return err
 	}

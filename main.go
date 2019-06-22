@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
@@ -9,17 +11,18 @@ import (
 
 type Todo struct {
 	ID     int
-	Title  string
-	Status string
+	Title  string `json:"title"`
+	Status string `json:"status"`
 }
 
 func main() {
 	r := gin.Default()
 
-	r.GET("/student", getStudentHandler)
-	r.GET("/students", postStudentHandler)
+	r.GET("/api/todos", getTodosHandler)
+	r.GET("/api/todos/:id", getTodoByID)
+	r.POST("/api/todos", postTodoHandler)
+	r.DELETE("/api/todos/:id", deleteTodoByID)
 
-	r.GET("/api/todos", getTodos)
 	r.Run(":1234")
 }
 
@@ -31,11 +34,49 @@ func postStudentHandler(c *gin.Context) {
 
 }
 
-func getTodos(c *gin.Context) {
+func getTodosHandler(c *gin.Context) {
 	todos, err := queryTodos()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
 	c.JSON(200, todos)
+}
+
+func getTodoByID(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	todo, err := queryTodoByID(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	c.JSON(200, todo)
+}
+
+func postTodoHandler(c *gin.Context) {
+	var todo Todo
+	c.BindJSON(&todo)
+	id, err := addTodo(todo.Title, todo.Status)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	c.JSON(200, gin.H{"status": fmt.Sprintf("ID %d Added", id)})
+}
+
+func deleteTodoByID(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	if err := removeTodoByID(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	c.JSON(200, gin.H{"status": "Deleted"})
 }
