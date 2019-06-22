@@ -20,7 +20,7 @@ func main() {
 	r := gin.Default()
 	p := fmt.Sprintf(":%s", os.Getenv("PORT"))
 
-	r.GET("/api/todos", getTodosHandler)
+	r.GET("/api/todo", getTodosHandler)
 	r.GET("/api/todos/:id", getTodoByID)
 	r.POST("/api/todos", postTodoHandler)
 	r.DELETE("/api/todos/:id", deleteTodoByID)
@@ -84,7 +84,7 @@ func postTodoHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(200, gin.H{"status": fmt.Sprintf("ID %d Added", id)})
+	c.JSON(201, gin.H{"status": fmt.Sprintf("ID %d Added", id)})
 }
 
 func deleteTodoByID(c *gin.Context) {
