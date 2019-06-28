@@ -23,6 +23,7 @@ func main() {
 	r.GET("/api/todo", getTodosHandler)
 	r.GET("/api/todos/:id", getTodoByID)
 	r.POST("/api/todos", postTodoHandler)
+	r.PUT("/api/todos/:id", updateTodoHandler)
 	r.DELETE("/api/todos/:id", deleteTodoByID)
 
 	r.Run(p)
@@ -85,6 +86,32 @@ func postTodoHandler(c *gin.Context) {
 	}
 
 	c.JSON(201, todo)
+}
+
+func updateTodoHandler(c *gin.Context) {
+	db, err := connect()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer db.Close()
+
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var todo Todo
+	c.BindJSON(&todo)
+	todo.ID = id
+	err = updateTodo(db, id, todo.Title, todo.Status)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, todo)
 }
 
 func deleteTodoByID(c *gin.Context) {

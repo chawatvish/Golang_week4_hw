@@ -64,6 +64,19 @@ func addTodo(db *sql.DB, title string, status string) (Todo, error) {
 	return todo, nil
 }
 
+func updateTodo(db *sql.DB, id int, title string, status string) error {
+	stmt, err := db.Prepare("UPDATE todos SET title=$2, status=$3 WHERE id=$1;")
+	if err != nil {
+		return err
+	}
+
+	if _, err := stmt.Exec(id, title, status); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func updateTodoStatus(db *sql.DB, id int, status string) error {
 	stmt, err := db.Prepare("UPDATE todos SET status=$2 WHERE id=$1;")
 	if err != nil {
